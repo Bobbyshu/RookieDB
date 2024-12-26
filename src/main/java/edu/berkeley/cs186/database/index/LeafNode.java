@@ -161,8 +161,29 @@ class LeafNode extends BPlusNode {
     @Override
     public Optional<Pair<DataBox, Long>> put(DataBox key, RecordId rid) {
         // TODO(proj2): implement
+        // insert (k, r) pair
+        int index = InnerNode.numLessThan(key, keys);
+        keys.add(index, key);
+        rids.add(index, rid);
+        if (keys.size() <= metadata.getOrder() * 2) {
+            // If inserting the pair (k, r) does NOT cause leaf to overflow
+            // Optional.empty() is returned.
+            sync();
+            return Optional.empty();
+        }
 
-        return Optional.empty();
+        // If inserting the pair (k, r) does cause the node n to overflow
+        // a pair (split_key, right_node_page_num) is returned.
+        List<DataBox> right_keys = keys.subList(metadata.getOrder(), keys.size());
+        List<RecordId> right_rids = rids.subList(metadata.getOrder(), rids.size());
+        keys = keys.subList(0, metadata.getOrder());
+        rids = rids.subList(0, metadata.getOrder());
+        sync();
+        Page new_page = bufferManager.fetchNewPage(treeContext, metadata.getPartNum());
+        LeafNode new_rightSibling = new LeafNode(metadata, bufferManager, new_page, right_keys, right_rids,
+            rightSibling, treeContext);
+        rightSibling = Optional.of(new_page.getPageNum());
+        return Optional.of(new Pair(right_keys.get(0), new_page.getPageNum()));
     }
 
     // See BPlusNode.bulkLoad.
