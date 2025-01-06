@@ -90,7 +90,7 @@ public enum LockType {
             case S : return required == NL || required == IS || required == S;
             case SIX : return !(required == X);
             case X : return true;
-            default: throw new UnsupportedOperationException("bad lock type");
+            default: throw new UnsupportedOperationException("Bad lock type");
         }
     }
 
